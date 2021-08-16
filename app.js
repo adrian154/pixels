@@ -26,12 +26,23 @@ const wss = config.debug ?
             return new WebSocket.Server({server: httpServer});
         })();
 
+const users = {};
+
 wss.on("connection", ws => {
+
+    const addr = ws._socket.remoteAddress;
+    if(users[addr]) {
+        ws.send(JSON.stringify({error: "You've already joined on this location."}));
+        ws.close();
+    }
 
     ws.user = {
         lastPlaceTimestamp: Date.now(),
         name: config.defaultName
     };
+
+    users[addr] = ws.user;
+    console.log(users);
 
     ws.on("message", messageText => {
         try {
@@ -69,6 +80,11 @@ wss.on("connection", ws => {
         } catch(error) {
             console.error("failed to handle message: " + error);
         }
+    });
+
+    ws.on("close", () => {
+        delete users[ws._socket.remoteAddress];
+        console.log(users);
     });
 
     ws.send(JSON.stringify({type: "initial", board: board, placeDelay: config.placeDelay}));

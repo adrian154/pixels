@@ -11,10 +11,42 @@ const socket = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}:/
 
 let timer = 0;
 let color = 0;
-let viewX = 0, viewY = 0, zoom = 1;
+let viewX = 0, viewY = 0, pixelX = 0, pixelY = 0, zoom = 1;
 let maxPlaceDelay;
 
-// add palette boxes
+const draw = () => {
+    
+    mainCtx.resetTransform();
+    mainCtx.fillStyle = "#eeeeee";
+    mainCtx.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
+    mainCtx.translate(Math.trunc(mainCanvas.width / 2), Math.trunc(mainCanvas.height / 2));
+
+    if(socket.readyState == WebSocket.CLOSED) {
+        mainCtx.textAlign = "center";
+        mainCtx.fillStyle = "#ff0000";
+        mainCtx.font = "72px Arial";
+        mainCtx.fillText("connection closed, try reloading", 0, 0);
+    } else {
+
+        mainCtx.translate(viewX, viewY);
+        mainCtx.scale(zoom, zoom);
+        mainCtx.translate(Math.trunc(-hiddenCanvas.width/2), Math.trunc(-hiddenCanvas.height/2));
+
+        
+        // draw main canvas
+        mainCtx.drawImage(hiddenCanvas, 0, 0);
+
+        // draw highlight
+        mainCtx.globalAlpha = 0.25;
+        mainCtx.fillStyle = PALETTE[color];
+        mainCtx.fillRect(pixelX, pixelY, 1, 1);
+        mainCtx.globalAlpha = 1.0;
+
+    }
+
+};
+
+// add palette box
 const paletteBox = document.getElementById("palette");
 for(let i = 0; i < 2; i++) {
     const row = document.createElement("div");
@@ -32,7 +64,9 @@ for(let i = 0; i < 2; i++) {
 socket.addEventListener("message", packet => {
     try {
         const message = JSON.parse(packet.data);
-        if(message.type === "initial") {
+        if(message.error) { 
+            alert(message.error);
+        } else if(message.type === "initial") {
             for(let x = 0; x < 256; x++) {
                 maxPlaceDelay = message.placeDelay / 1000 * 60;
                 for(let y = 0; y < 256; y++) {
@@ -54,10 +88,13 @@ socket.addEventListener("message", packet => {
     }
 });
 
+socket.addEventListener("close", draw);
+
 const handleResize = () => {
     mainCanvas.width = window.innerWidth;
     mainCanvas.height = window.innerHeight;
     mainCtx.imageSmoothingEnabled = false;
+    draw();
 };
 
 window.addEventListener("resize", handleResize);
@@ -74,16 +111,6 @@ const animateTimer = () => {
     }
 };
 
-const draw = () => {
-    mainCtx.resetTransform();
-    mainCtx.fillStyle = "#eeeeee";
-    mainCtx.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
-    mainCtx.translate(Math.trunc(mainCanvas.width / 2), Math.trunc(mainCanvas.height / 2));
-    mainCtx.translate(viewX, viewY);
-    mainCtx.scale(zoom, zoom);
-    mainCtx.drawImage(hiddenCanvas, Math.trunc(-hiddenCanvas.width/2), Math.trunc(-hiddenCanvas.height/2));
-};
-
 let mousedown = false, mousemoved = false;
 window.addEventListener("mousedown", event => {
     mousedown = true;
@@ -97,11 +124,10 @@ window.addEventListener("mouseup", event => {
 
 mainCanvas.addEventListener("click", event => {
     if(timer > 0 || mousemoved) return;
-    if(socket.readyState != WebSocket.OPEN) alert("The connection is down, try reloading.");
     socket.send(JSON.stringify({
         action: "place",
         x: (event.offsetX - viewX - mainCanvas.width / 2) / zoom + hiddenCanvas.width / 2,
-        y: (event.offsetY - viewY - mainCanvas.height / 2) / zoom + + hiddenCanvas.height / 2,
+        y: (event.offsetY - viewY - mainCanvas.height / 2) / zoom + hiddenCanvas.height / 2,
         color
     }));
     timer = maxPlaceDelay;
@@ -109,12 +135,22 @@ mainCanvas.addEventListener("click", event => {
 });
 
 window.addEventListener("mousemove", event => {
+    
     mousemoved = true;
-    if(mousedown) {
-        viewX += event.movementX;
-        viewY += event.movementY;
+    
+    newPixelX = Math.floor((event.offsetX - viewX - mainCanvas.width / 2) / zoom + hiddenCanvas.width / 2);
+    newPixelY = Math.floor((event.offsetY - viewY - mainCanvas.height / 2) / zoom + hiddenCanvas.height / 2);
+    
+    if(mousedown || newPixelX != pixelX || newPixelY != pixelY) {
+        if(mousedown) {
+            viewX += event.movementX;
+            viewY += event.movementY;
+        }
+        pixelX = newPixelX;
+        pixelY = newPixelY;
         draw();
     }
+
 });
 
 let zoomLevel = 0;

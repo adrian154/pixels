@@ -13,6 +13,6 @@ const PALETTE = [
     "#55ffff",
     "#ff5555",
     "#ff55ff",
-    "#ffff55",
+    "#fff836",
     "#ffffff"
 ];
