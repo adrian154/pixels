@@ -1,0 +1,60 @@
+body {
+    margin: 0;
+    overflow: hidden;
+}
+
+#hidden-canvas {
+    display: none;
+}
+
+#info {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 1.0em;
+    font-family: monospace;
+    width: 20.0em;
+}
+
+#palette {
+    position: fixed;
+    left: 50%;
+    bottom: 0.5em;
+    transform: translate(-50%, -50%);
+    margin: 0 auto;
+    border-radius: 8px;
+    padding: 0.5em;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+#palette .cell {
+    display: inline-block;
+    width: 1.5em;
+    height: 1.5em;
+    background-color: #ff0000;
+    margin: 0 0.2em;
+}
+
+#palette .cell:first-child {
+    margin-left: 0;
+}
+
+#palette .cell:last-child {
+    margin-right: 0;
+}
+
+#timer {
+    position: absolute;
+    left: 50%;
+    top: 1.0em;
+    margin: 0 auto;
+    transform: translate(-50%, -50%);
+    width: 100px;
+    background-color: rgba(0, 0, 0, 0.25);
+}
+
+#timer-bar {
+    width: 0%;
+    height: 20px;
+    background-color: #1f87ff;
+}
