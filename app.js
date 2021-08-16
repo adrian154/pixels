@@ -1,14 +1,9 @@
 const Express = require("express");
 const WebSocket = require("ws");
 const fs = require("fs");
+const fetch = require("node-fetch");
 const config = require("./config.json");
 const https = require("https");
-
-// helper funcs
-const validateName = name => {
-    name = name.trim().replace(/\s+/g, " ");
-    if(name.length < 3 || name.length > 24) return config.defaultName;
-};
 
 // set up board
 const board = fs.existsSync("./canvas.json") ? require("./canvas.json") : Array.from({length: 256}, () => new Array(256).fill(15));
@@ -31,37 +26,36 @@ const users = {};
 wss.on("connection", ws => {
 
     const addr = ws._socket.remoteAddress;
-    if(users[addr]) {
-        ws.send(JSON.stringify({error: "You've already joined on this location."}));
-        ws.close();
-    }
-
-    ws.user = {
-        lastPlaceTimestamp: Date.now(),
-        name: config.defaultName
-    };
-
-    users[addr] = ws.user;
-    console.log(users);
+    const user = users[addr] ?? (users[addr] = {lastPlaceTime: Date.now(), placed: 0});
 
     ws.on("message", messageText => {
+ 
         try {
             const message = JSON.parse(messageText);
+            
             if(message.action === "place") {
-                if(Date.now() - ws.user.lastPlaceTimestamp > config.placeDelay) {
+            
+                if(Date.now() - user.lastPlaceTime > config.placeDelay) {
+            
+                    // validate message
                     if(typeof message.x !== "number" ||
-                       typeof message.y !== "number" ||
-                       typeof message.color !== "number" ||
-                       message.x < 0 ||
-                       message.y < 0 ||
-                       message.x > board.length ||
-                       message.y > board[0].length ||
-                       message.color < 0 ||
-                       message.color > 16)
-                       return;                
+                        typeof message.y !== "number" ||
+                        typeof message.color !== "number" ||
+                        message.x < 0 ||
+                        message.y < 0 ||
+                        message.x > board.length ||
+                        message.y > board[0].length ||
+                        message.color < 0 ||
+                        message.color > 16 ||
+                        !user.captcha)
+                        return;                
+            
+                    // actually place pixel
                     message.x = Math.trunc(message.x);
                     message.y = Math.trunc(message.y);
                     board[message.x][message.y] = message.color;
+                    console.log(addr);
+            
                     for(const client of wss.clients) {
                         client.send(JSON.stringify({
                             type: "place",
@@ -70,24 +64,42 @@ wss.on("connection", ws => {
                             color: message.color 
                         }));
                     }
-                    ws.user.lastPlaceTimestamp = Date.now();
-                } 
-            } else if(message.action === "changename") {
-                ws.user.name = validateName(message.name);
-            } else if(message.action === "message") {
-                // TODO
+            
+                    user.lastPlaceTime = Date.now();
+                    user.placed++;
+
+                    if(user.placed % 100 == 0) {
+                        user.captcha = false;
+                        ws.send(JSON.stringify({type: "captcha"}));
+                    }
+            
+                }
+            
+            } else if(message.action === "captcha") {
+
+                if(typeof message.value !== "string")
+                    return;
+
+                fetch(`https://www.google.com/recaptcha/api/siteverify?secret=${config.recaptchaSecret}&response=${message.value}`, {
+                    method: "POST",
+                }).then(() => user.captcha = true).catch(console.error);
+
             }
+
         } catch(error) {
             console.error("failed to handle message: " + error);
         }
     });
 
+    // persist cooldown between websockets
+    /*
     ws.on("close", () => {
-        delete users[ws._socket.remoteAddress];
-        console.log(users);
+        delete users[addr];
     });
+    */
 
     ws.send(JSON.stringify({type: "initial", board: board, placeDelay: config.placeDelay}));
+    ws.send(JSON.stringify({type: "captcha"}));
 
 });
 

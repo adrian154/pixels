@@ -1,11 +1,10 @@
 const hiddenCanvas = document.getElementById("hidden-canvas");
 const mainCanvas = document.getElementById("main-canvas");
-
 const hiddenCtx = hiddenCanvas.getContext("2d");
 const mainCtx = mainCanvas.getContext("2d");
-
 const timerElem = document.getElementById("timer");
 const timerBar = document.getElementById("timer-bar");
+const captchaLayer = document.getElementById("overlay");
 
 const socket = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname}:8082/`)
 
@@ -61,6 +60,18 @@ for(let i = 0; i < 2; i++) {
     paletteBox.appendChild(row);
 }
 
+let recaptchaLoaded = false;
+window.onrecaptchaload = () => {
+    recaptchaLoaded = true;
+};
+
+const submitCAPTCHA = () => {
+    if(grecaptcha.getResponse()) {
+        captchaLayer.style.display = "none";
+        socket.send(JSON.stringify({action: "captcha", value: grecaptcha.getResponse()}));
+    }
+};
+
 socket.addEventListener("message", packet => {
     try {
         const message = JSON.parse(packet.data);
@@ -79,8 +90,11 @@ socket.addEventListener("message", packet => {
             hiddenCtx.fillStyle = PALETTE[message.color];
             hiddenCtx.fillRect(message.x, message.y, 1, 1);
             draw();
-        } else if(message.type === "chat") {
-            // TODO
+        } else if(message.type === "captcha") {
+            captchaLayer.style.display = "block";
+            if(recaptchaLoaded) {
+                grecaptcha.reset();
+            } 
         }
     } catch(error) {
         console.error(error);
