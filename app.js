@@ -88,4 +88,7 @@ const save = () => {
 };
 
 setInterval(save, config.saveInterval);
-process.on("exit", save);
+process.on("SIGTERM", () => {
+    save();
+    process.exit();
+});
