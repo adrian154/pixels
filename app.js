@@ -28,7 +28,6 @@ wss.on("connection", ws => {
     const addr = ws._socket.remoteAddress;
     const user = users[addr] ?? (users[addr] = {
         lastPlaceTime: Date.now(),
-        captchaTime: Date.now(),
         placed: 0
     });
 
@@ -74,7 +73,6 @@ wss.on("connection", ws => {
 
                     if(user.placed % 100 == 0) {
                         user.captcha = false;
-                        user.captchaTime = Date.now();
                         ws.send(JSON.stringify({type: "captcha"}));
                     }
             
@@ -88,7 +86,7 @@ wss.on("connection", ws => {
                 fetch(`https://www.google.com/recaptcha/api/siteverify?secret=${config.recaptchaSecret}&response=${message.value}`, {
                     method: "POST",
                 }).then(resp => resp.json()).then(resp => {
-                    if(resp.success && new Date(resp.challenge_ts) > user.captchaTime) {
+                    if(resp.success) {
                         user.captcha = true;
                     }
                 }).catch(console.error);
