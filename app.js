@@ -26,7 +26,11 @@ const users = {};
 wss.on("connection", ws => {
 
     const addr = ws._socket.remoteAddress;
-    const user = users[addr] ?? (users[addr] = {lastPlaceTime: Date.now(), placed: 0});
+    const user = users[addr] ?? (users[addr] = {
+        lastPlaceTime: Date.now(),
+        captchaTime: Date.now(),
+        placed: 0
+    });
 
     ws.on("message", messageText => {
  
@@ -70,6 +74,7 @@ wss.on("connection", ws => {
 
                     if(user.placed % 100 == 0) {
                         user.captcha = false;
+                        user.captchaTime = Date.now();
                         ws.send(JSON.stringify({type: "captcha"}));
                     }
             
@@ -82,7 +87,11 @@ wss.on("connection", ws => {
 
                 fetch(`https://www.google.com/recaptcha/api/siteverify?secret=${config.recaptchaSecret}&response=${message.value}`, {
                     method: "POST",
-                }).then(() => user.captcha = true).catch(console.error);
+                }).then(resp => resp.json()).then(resp => {
+                    if(resp.success && new Date(resp.challenge_ts) > user.captchaTime) {
+                        user.captcha = true;
+                    }
+                }).catch(console.error);
 
             }
 
@@ -90,13 +99,6 @@ wss.on("connection", ws => {
             console.error("failed to handle message: " + error);
         }
     });
-
-    // persist cooldown between websockets
-    /*
-    ws.on("close", () => {
-        delete users[addr];
-    });
-    */
 
     ws.send(JSON.stringify({type: "initial", board: board, placeDelay: config.placeDelay}));
     ws.send(JSON.stringify({type: "captcha"}));
