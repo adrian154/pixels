@@ -1,3 +1,5 @@
+(async () => {
+
 const hiddenCanvas = document.getElementById("hidden-canvas");
 const mainCanvas = document.getElementById("main-canvas");
 const hiddenCtx = hiddenCanvas.getContext("2d");
@@ -6,7 +8,8 @@ const timerElem = document.getElementById("timer");
 const timerBar = document.getElementById("timer-bar");
 const captchaLayer = document.getElementById("overlay");
 
-const socket = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname}:8082/`)
+const port = Number(await (await fetch("/port")).text());
+const socket = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname}:${port}/`)
 
 let timer = 0;
 let color = 0;
@@ -65,12 +68,12 @@ window.onrecaptchaload = () => {
     recaptchaLoaded = true;
 };
 
-const submitCAPTCHA = () => {
+document.getElementById("submit-captcha").addEventListener("click", () => {
     if(grecaptcha.getResponse()) {
         captchaLayer.style.display = "none";
         socket.send(JSON.stringify({action: "captcha", value: grecaptcha.getResponse()}));
     }
-};
+});
 
 socket.addEventListener("message", packet => {
     try {
@@ -177,3 +180,5 @@ window.addEventListener("wheel", event => {
 window.addEventListener("keydown", event => {
     // TODO
 });
+
+})().catch(console.error);

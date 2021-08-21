@@ -105,7 +105,12 @@ wss.on("connection", ws => {
 
 // set up express server
 const app = Express();
+
 app.use(Express.static("./static"));
+app.get("/port", (req, res) => {
+    res.send(String(config.socketPort));
+});
+
 app.listen(config.webPort, () => {
     console.log("Webserver started");
 });
