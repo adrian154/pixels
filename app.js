@@ -52,7 +52,7 @@ wsServer.on("connection", (ws, req) => {
                     user.lastPlaceTime = Date.now();
                     user.counter++;
 
-                    if(user.placed % 100 == 0 && !config.noCaptcha) {
+                    if(user.counter % config.pixelsPerCaptcha == 0 && !config.noCaptcha) {
                         user.captcha = false;
                         ws.send(JSON.stringify({type: "captcha"}));
                     }
@@ -76,6 +76,7 @@ wsServer.on("connection", (ws, req) => {
 
     });
 
+    ws.send(canvas.data);
     ws.send(JSON.stringify({
         type: "settings",
         width: canvas.width,
@@ -83,7 +84,6 @@ wsServer.on("connection", (ws, req) => {
         placeDelay: config.placeDelay,
         palette: config.palette
     }));
-    ws.send(canvas.data);
 
     if(!config.noCaptcha) {
         ws.send(JSON.stringify({type: "captcha"}));
