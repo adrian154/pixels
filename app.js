@@ -76,7 +76,13 @@ wsServer.on("connection", (ws, req) => {
 
     });
 
-    ws.send(JSON.stringify({type: "settings", width: canvas.width, height: canvas.height, placeDelay: config.placeDelay}));
+    ws.send(JSON.stringify({
+        type: "settings",
+        width: canvas.width,
+        height: canvas.height,
+        placeDelay: config.placeDelay,
+        palette: config.palette
+    }));
     ws.send(canvas.data);
 
     if(!config.noCaptcha) {

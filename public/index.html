@@ -17,15 +17,12 @@
         </div>
         <div class="layer" id="captcha-overlay" style="display: none;">
             <div id="captcha-modal">
-                <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
-                <!--<div class="g-recaptcha" data-sitekey="6LfKjwUcAAAAAEnt8wQOArtMwdocotDAhtnt-Q_E"></div>-->
-                <button id="submit-captcha">Submit</button>
+                <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" data-callback="submitCaptcha"></div>
             </div>
         </div>
         <div class="layer" id="error-text" style="display: none;">
             <p>connection died, try reloading</p>
         </div>
-        <script src="palette.js"></script>
         <script src="pixels.js"></script>
     </body>
 </html>

@@ -16,32 +16,36 @@ const ctx = canvas.getContext("2d");
 let timer = 0;
 let color = 0;
 let maxPlaceDelay;
-let settingsReceived = false, canvasData = null;
-
-// add the palette
-const paletteBox = document.getElementById("palette");
-for(let i = 0; i < 2; i++) {
-    const row = document.createElement("div");
-    for(let j = 0; j < 8; j++) {
-        const cell = document.createElement("div");
-        cell.classList.add("cell");
-        const curColor = i * 8 + j;
-        cell.style.backgroundColor = PALETTE[curColor];
-        cell.addEventListener("click", () => color = curColor);
-        row.appendChild(cell);
-    }
-    paletteBox.appendChild(row);
-}
+let canvasData = null, palette = null, ready = false;
 
 // --- draw initial canvas
 const initCanvas = () => {
-    if(settingsReceived && canvasData) {
+    
+    if(palette && canvasData) {
         for(let x = 0; x < canvas.width; x++) {
             for(let y = 0; y < canvas.height; y++) {
-                ctx.fillStyle = PALETTE[canvasData[y * canvas.width + x]];
+                ctx.fillStyle = palette[canvasData[y * canvas.width + x]];
                 ctx.fillRect(x, y, 1, 1);
             }
         }
+        ready = true;
+    }
+
+};
+
+const createPaletteBox = () => {
+    const paletteBox = document.getElementById("palette");
+    for(let i = 0; i < 2; i++) {
+        const row = document.createElement("div");
+        for(let j = 0; j < 8; j++) {
+            const cell = document.createElement("div");
+            cell.classList.add("cell");
+            const curColor = i * 8 + j;
+            cell.style.backgroundColor = palette[curColor];
+            cell.addEventListener("click", () => color = curColor);
+            row.appendChild(cell);
+        }
+        paletteBox.appendChild(row);
     }
 };
 
@@ -72,13 +76,14 @@ const connect = port => {
                 maxPlaceDelay = message.placeDelay / 1000 * 60;
                 canvas.width = message.width;
                 canvas.height = message.height;
-                settingsReceived = true;
+                palette = message.palette;
+                createPaletteBox();
                 initCanvas();
                 return;
             }
             
             if(message.type === "place") {
-                ctx.fillStyle = PALETTE[message.color];
+                ctx.fillStyle = palette[message.color];
                 ctx.fillRect(message.x, message.y, 1, 1);
                 canvasData[message.y * canvas.width + message.x] = message.color;
                 return;
@@ -108,12 +113,12 @@ const connect = port => {
 fetch("/port").then(resp => resp.text()).then(port => connect(port));
 
 // --- UI logic
-document.getElementById("submit-captcha").addEventListener("click", () => {
+window.submitCaptcha = () => {
     if(grecaptcha.getResponse()) {
         captchaLayer.style.display = "none";
         socket.send(JSON.stringify({action: "captcha", value: grecaptcha.getResponse()}));
     }
-});
+};
 
 const animateTimer = () => {
     timerElem.style.display = "";
@@ -134,7 +139,7 @@ let scale = 1, scrollLevel = 0;
 let mouseDown = false, moves = 0;
 
 canvas.addEventListener("click", (event) => {
-    if(timer == 0 && moves < 2) {
+    if(timer == 0 && moves < 2 && ready) {
         socket.send(JSON.stringify({action: "place", x: canvasX, y: canvasY, color}));
         timer = maxPlaceDelay;
         animateTimer();
@@ -157,17 +162,21 @@ window.addEventListener("mousemove", (event) => {
     mouseY = event.clientY;
     
     // undraw overlay pixel
-    ctx.fillStyle = PALETTE[canvasData[canvasY * canvas.width + canvasX]];
-    ctx.fillRect(canvasX, canvasY, 1, 1);
-    
+    if(ready) {
+        ctx.fillStyle = palette[canvasData[canvasY * canvas.width + canvasX]];
+        ctx.fillRect(canvasX, canvasY, 1, 1);
+    }
+
     canvasX = Math.floor((mouseX - cameraX) / scale);
     canvasY = Math.floor((mouseY - cameraY) / scale);
 
     // draw new overlay pixel
-    ctx.globalAlpha = 0.3;
-    ctx.fillStyle = PALETTE[color];
-    ctx.fillRect(canvasX, canvasY, 1, 1);
-    ctx.globalAlpha = 1.0;
+    if(ready) {
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = palette[color];
+        ctx.fillRect(canvasX, canvasY, 1, 1);
+        ctx.globalAlpha = 1.0;
+    }
 
     // draw pixel
     if(mouseDown) {
