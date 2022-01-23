@@ -76,6 +76,9 @@ const connect = port => {
                 maxPlaceDelay = message.placeDelay / 1000 * 60;
                 canvas.width = message.width;
                 canvas.height = message.height;
+                cameraX = window.innerWidth / 2 - canvas.width / 2;
+                cameraY = window.innerHeight / 2 - canvas.height / 2;
+                updateTransform();
                 palette = message.palette;
                 createPaletteBox();
                 initCanvas();
