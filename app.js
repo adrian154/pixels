@@ -5,7 +5,7 @@ const Express = require("express");
 const WebSocket = require("ws");
 
 // state
-const canvas = new Canvas(512, 512, "public/canvas.dat");
+const canvas = new Canvas(512, 512, "canvas.dat");
 const wsServer = new WebSocket.Server({port: config.socketPort});
 const users = {};
 

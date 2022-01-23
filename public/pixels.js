@@ -80,6 +80,7 @@ const connect = port => {
             if(message.type === "place") {
                 ctx.fillStyle = PALETTE[message.color];
                 ctx.fillRect(message.x, message.y, 1, 1);
+                canvasData[message.y * canvas.width + message.x] = message.color;
                 return;
             }
             
@@ -125,22 +126,22 @@ const animateTimer = () => {
     }
 };
 
-
+let canvasX = 0, canvasY = 0;
 let cameraX = 0, cameraY = 0;
 let mouseX = 0, mouseY = 0;
+
 let scale = 1, scrollLevel = 0;
 let mouseDown = false, moves = 0;
 
 canvas.addEventListener("click", (event) => {
     if(timer == 0 && moves < 2) {
-        socket.send(JSON.stringify({action: "place", x: Math.floor(event.offsetX), y: Math.floor(event.offsetY), color}));
+        socket.send(JSON.stringify({action: "place", x: canvasX, y: canvasY, color}));
         timer = maxPlaceDelay;
         animateTimer();
     }
 });
 
 const updateTransform = () => {
-    //canvas.style.transform = `translate(${cameraX}px, ${cameraY}px) scale(${scale}, ${scale})`;
     canvas.style.transform = `matrix(${scale}, 0, 0, ${scale}, ${cameraX}, ${cameraY})`;
 };
 
@@ -151,14 +152,31 @@ window.addEventListener("mousedown", () => {
 
 window.addEventListener("mouseup", () => mouseDown = false);
 window.addEventListener("mousemove", (event) => {
+
     mouseX = event.clientX;
     mouseY = event.clientY;
+    
+    // undraw overlay pixel
+    ctx.fillStyle = PALETTE[canvasData[canvasY * canvas.width + canvasX]];
+    ctx.fillRect(canvasX, canvasY, 1, 1);
+    
+    canvasX = Math.floor((mouseX - cameraX) / scale);
+    canvasY = Math.floor((mouseY - cameraY) / scale);
+
+    // draw new overlay pixel
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = PALETTE[color];
+    ctx.fillRect(canvasX, canvasY, 1, 1);
+    ctx.globalAlpha = 1.0;
+
+    // draw pixel
     if(mouseDown) {
         moves++;
         cameraX += event.movementX;
         cameraY += event.movementY;
         updateTransform();
     }
+    
 });
 
 window.addEventListener("wheel", (event) => {
@@ -177,9 +195,8 @@ window.addEventListener("wheel", (event) => {
     scrollLevel -= event.deltaY / 100;
     const oldScale = scale;
     scale = Math.pow(1.2, scrollLevel);
-    cameraX += (mouseX - cameraX) * (oldScale - scale) / oldScale;
-    cameraY += (mouseY - cameraY) * (oldScale - scale) / oldScale;
-
-    updateTransform()
+    cameraX += canvasX * (oldScale - scale);
+    cameraY += canvasY * (oldScale - scale);
+    updateTransform();
 
 });

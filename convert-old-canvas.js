@@ -2,7 +2,7 @@
 const old = require("./canvas.json");
 
 const Canvas = require("./canvas.js");
-const canvas = new Canvas(old.length, old[0].length, "public/canvas.dat");
+const canvas = new Canvas(old.length, old[0].length, "canvas.dat");
 
 for(let x = 0; x < old.length; x++) {
     for(let y = 0; y < old[x].length; y++) {
