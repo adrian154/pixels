@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Pixels</title>
+        <link rel="stylesheet" href="styles.css">
+        <script src="https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad" async defer></script>
+    </head>
+    <body>
+        <canvas id="canvas"></canvas>
+        <div id="timer" style="display: none">
+            <div id="timer-bar"></div>
+        </div>
+        <div id="palette-container">
+            <div id="palette">
+            </div>
+        </div>
+        <div class="layer" id="captcha-overlay" style="display: none;">
+            <div id="captcha-modal">
+                <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
+                <!--<div class="g-recaptcha" data-sitekey="6LfKjwUcAAAAAEnt8wQOArtMwdocotDAhtnt-Q_E"></div>-->
+                <button id="submit-captcha">Submit</button>
+            </div>
+        </div>
+        <div class="layer" id="error-text" style="display: none;">
+            <p>connection died, try reloading</p>
+        </div>
+        <script src="palette.js"></script>
+        <script src="pixels.js"></script>
+    </body>
+</html>
