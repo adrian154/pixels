@@ -5,9 +5,16 @@
         <title>Pixels</title>
         <link rel="stylesheet" href="styles.css">
         <script src="https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad" async defer></script>
+        <meta property="og:title" value="Pixels">
+        <meta property="og:description" value="A place for building collaborative pixel art">
+        <meta property="og:image" value="https://pixels.bithole.dev/canvas.png">
+        <meta name="twitter:card" content="summary_large_image">
     </head>
     <body>
         <canvas id="canvas"></canvas>
+        <div id="coordinates">
+            <span id="cursor-pos"></span>
+        </div>
         <div id="timer" style="display: none">
             <div id="timer-bar"></div>
         </div>
@@ -22,7 +29,7 @@
                 <p>If you want to embed this canvas elsewhere, there's an <a href="canvas.png">image version</a> which periodically updates. Pixels is also <a href="https://github.com/adrian154/pixels">open source</a>.</p>
                 <p><b>But first, please confirm that you're not a robot.</b></p>
                 <div style="display: flex">
-                    <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" data-callback="submitCaptcha" style="margin: auto"></div>
+                    <div class="g-recaptcha" data-sitekey="6LfKjwUcAAAAAEnt8wQOArtMwdocotDAhtnt-Q_E" data-callback="submitCaptcha" style="margin: auto"></div>
                 </div>
             </div>
         </div>

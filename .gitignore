@@ -1,7 +1,5 @@
 node_modules/
 config.json
-
-# canvas files
 public/canvas.png
 canvas.json
 canvas.dat

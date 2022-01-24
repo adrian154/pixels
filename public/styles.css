@@ -96,3 +96,14 @@ body {
     margin: auto;
     text-align: center;
 }
+
+#coordinates {
+    display: inline-block;
+    position: fixed;
+    top: 0.5em;
+    left: 0.5em;
+    background: rgba(0, 0, 0, 0.5);
+    color: #ffffff;
+    border-radius: 5px;
+    padding: 0.5em;
+}

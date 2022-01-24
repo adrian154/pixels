@@ -1,4 +1,5 @@
 node_modules/
-public/canvas.dat
 config.json
+public/canvas.png
 canvas.json
+canvas.dat

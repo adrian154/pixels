@@ -7,6 +7,7 @@ const timerElem = document.getElementById("timer");
 const timerBar = document.getElementById("timer-bar");
 const captchaLayer = document.getElementById("captcha-overlay");
 const errorLayer = document.getElementById("error-text");
+const cursorPos = document.getElementById("cursor-pos");
 
 // canvas
 const canvas = document.getElementById("canvas");
@@ -73,21 +74,30 @@ const connect = port => {
             }
             
             if(message.type === "settings") {
+                
+                // save settings
                 maxPlaceDelay = message.placeDelay / 1000 * 60;
                 canvas.width = message.width;
                 canvas.height = message.height;
+                palette = message.palette;
+
+                // position canvas
                 cameraX = window.innerWidth / 2 - canvas.width / 2;
                 cameraY = window.innerHeight / 2 - canvas.height / 2;
                 updateTransform();
-                palette = message.palette;
+                
+                // run init tasks 
                 createPaletteBox();
                 initCanvas();
                 return;
+
             }
             
             if(message.type === "place") {
-                ctx.fillStyle = palette[message.color];
-                ctx.fillRect(message.x, message.y, 1, 1);
+                if(ready) {
+                    ctx.fillStyle = palette[message.color];
+                    ctx.fillRect(message.x, message.y, 1, 1);
+                }
                 canvasData[message.y * canvas.width + message.x] = message.color;
                 return;
             }
@@ -97,6 +107,10 @@ const connect = port => {
                 if(recaptchaReady) {
                     grecaptcha.reset();
                 } 
+            }
+
+            if(message.type === "ping" && ready) {
+                socket.send(JSON.stringify({action: "pong"}));
             }
 
         } catch(error) {
@@ -172,6 +186,7 @@ window.addEventListener("mousemove", (event) => {
 
     canvasX = Math.floor((mouseX - cameraX) / scale);
     canvasY = Math.floor((mouseY - cameraY) / scale);
+    cursorPos.textContent = `${canvasX} / ${canvasY}`;
 
     // draw new overlay pixel
     if(ready) {
@@ -191,6 +206,14 @@ window.addEventListener("mousemove", (event) => {
     
 });
 
+const updateScroll = () => {
+    const oldScale = scale;
+    scale = Math.pow(1.2, scrollLevel);
+    cameraX += canvasX * (oldScale - scale);
+    cameraY += canvasY * (oldScale - scale);
+    updateTransform();
+};
+
 window.addEventListener("wheel", (event) => {
 
     // scroll towards mouse:
@@ -204,11 +227,22 @@ window.addEventListener("wheel", (event) => {
     // thus,
     // newX = (windowX - cameraX) / scale * (scale - newScale)
 
-    scrollLevel -= event.deltaY / 100;
-    const oldScale = scale;
-    scale = Math.pow(1.2, scrollLevel);
-    cameraX += canvasX * (oldScale - scale);
-    cameraY += canvasY * (oldScale - scale);
-    updateTransform();
+    scrollLevel -= Math.sign(event.deltaY);
+    updateScroll();
 
+});
+
+// keyboard controls
+window.addEventListener("keydown", (event) => {
+    if(event.ctrlKey || event.metaKey) {
+        if(event.key == '-') {
+            scrollLevel--;
+            updateScroll();
+            event.preventDefault();
+        } else if(event.key == '=') {
+            scrollLevel++;
+            updateScroll();
+            event.preventDefault();
+        }
+    }
 });

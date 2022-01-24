@@ -17,9 +17,6 @@ class Canvas {
         this.filename = filename;
         this.load();
 
-        // save periodically
-        setInterval(() => this.save(), config.saveInterval);
-
         // save on kill
         process.on("SIGTERM", () => {
             this.save();
